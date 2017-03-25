@@ -37,16 +37,13 @@ class UndirectedSingleLayer(object):
 	"""
 
 
-	def __init__(self, query, budget=100, bfs_count=10, exp_type='oracle', dataset=None, logfile=None,k=5,cost=False, log_int=10):
+	def __init__(self, query, budget=100, exp_type='oracle', dataset=None, logfile=None, log_int=10):
 		super(UndirectedSingleLayer, self).__init__()
 		self._budget = budget 			# Total budget for sampling
-		self._bfs_count = bfs_count 	# Portion of the budget to be used for initial bfs
 		self._query = query 			# Query object
 		self._dataset = dataset 		# Name of the dataset used; Used for logging and caching
 		self._logfile = logfile 		# Name of the file to write log to
 		self._exp_type = exp_type
-		self._k = k
-		self._isCost = cost
 		self._log_interval = log_int
 		self._stage = None
 		self._one_cost = 0
@@ -1872,13 +1869,7 @@ class UndirectedSingleLayer(object):
 				len(self._sample['nodes']['close']), \
 				len(self._sample['nodes']['open'])))
 
-			"""
-			repititions = 0
-			for x in self._oracle._communities_selected:
-				repititions += self._oracle._communities_selected[x]
-			repititions = repititions - len(self._oracle._communities_selected)
-			print(self._oracle._communities_selected, len(self._oracle._communities_selected), repititions)
-			"""
+
 
 
 def Logging(sample):
@@ -1988,31 +1979,18 @@ if __name__ == '__main__':
 
 		tmp = []
 		for type in exp_list:
-			sample = UndirectedSingleLayer(query, budget, bfs_budget, type, dataset, log, k, is_cost, log_interval)
+			sample = UndirectedSingleLayer(query, budget, type, dataset, log, log_interval)
 
-			if starting_node == -1:
-				starting_node = sample._query.randomNode()
+			if starting_node == -1: starting_node = sample._query.randomNode()
 
 			print('[{}] Experiment {} starts at node {}'.format(type, i, starting_node))
 
-			# Getting sample
 			sample.generate()
-			# End getting sample
 
-			cost_arr = Append_Log(sample, type)
+			s = sample._sample_graph
+			close_nodes = set(sample._sample['nodes']['close'])
+			sub_g = s.subgraph(close_nodes)
+			pickle_path = './data/pokec-' + str(budget)
+			pickle.dump(sub_g, open(pickle_path, 'wb'))
 
-		if 'budget' not in Log_result:
-			Log_result['budget'] = cost_arr
-			Log_result_edges['budget'] = cost_arr
-		else:
-			Log_result['budget'] += (cost_arr)
-			Log_result_edges['budget'] += (cost_arr)
 
-		if 'budget' not in Log_result_nn:
-			Log_result_nn['budget'] = range(1,len(sample._track_new_nodes)+1)
-		else:
-			Log_result_nn['budget'] += range(1,len(sample._track_new_nodes)+1)
-
-		starting_node = -1
-    #
-	# SaveToFile(Log_result, Log_result_edges, Log_result_nn)

@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import collections
-import networkx2gt
-from graph_tool.all import *
+#import networkx2gt
+#from graph_tool.all import *
 import random
 
 
