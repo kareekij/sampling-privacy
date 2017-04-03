@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="fb98ced0-be21-478b-aefb-380a5f0d0e12" name="128.230.213.66" url="http://128.230.213.66">
+        <fileTransfer host="128.230.213.66" port="22" rootFolder="/home/kpugdeet" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

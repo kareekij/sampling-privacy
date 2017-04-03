@@ -2042,3 +2042,4 @@ if __name__ == '__main__':
 	print("Public {}, Private {}".format(len(pub_users), len(pri_users)))
 
 	pickle.dump(G, open(f_w, 'wb'))
+	print('bb')
