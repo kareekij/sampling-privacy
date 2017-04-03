@@ -35,13 +35,18 @@ class UndirectedSingleLayer(object):
 	"""
 	Class for Expansion-Densification sammling
 	"""
-	def __init__(self, query, budget=100, exp_type='oracle', dataset=None, logfile=None, log_int=10):
+
+
+	def __init__(self, query, budget=100, bfs_count=10, exp_type='oracle', dataset=None, logfile=None,k=5,cost=False, log_int=10):
 		super(UndirectedSingleLayer, self).__init__()
 		self._budget = budget 			# Total budget for sampling
+		self._bfs_count = bfs_count 	# Portion of the budget to be used for initial bfs
 		self._query = query 			# Query object
 		self._dataset = dataset 		# Name of the dataset used; Used for logging and caching
 		self._logfile = logfile 		# Name of the file to write log to
 		self._exp_type = exp_type
+		self._k = k
+		self._isCost = cost
 		self._log_interval = log_int
 		self._stage = None
 		self._one_cost = 0
@@ -1165,7 +1170,7 @@ class UndirectedSingleLayer(object):
 
 		sub_sample['nodes']['open'].add(current)
 		queue = [current]
-		private_count = 0
+
 		# Run till bfs budget allocated or no nodes left in queue
 		while self._cost < self._budget and len(queue) > 0:
 			# Select the first node from queue
@@ -1173,36 +1178,27 @@ class UndirectedSingleLayer(object):
 
 			# Get the neighbors - nodes and edges; and cost associated
 			nodes, edges, c = self._query.neighbors(current)
+			self._count_new_nodes(nodes, current)
 
-			if len(nodes) != 0:
-				self._count_new_nodes(nodes, current)
-				self._increment_cost(c)
-				for e in edges:
-					self._sample_graph.add_edge(e[0], e[1])
+			self._increment_cost(c)
 
-				if target_node in set(nodes):
-					print('!! Target found')
-			else:
-				print('Private user queried')
-				private_count += 1
+			for e in edges:
+				self._sample_graph.add_edge(e[0], e[1])
 
 			# Remove the current node from queue
 			queue.remove(current)
 
 			# Update queue
-			if len(nodes) != 0:
-				queue += list(nodes.difference(sub_sample['nodes']['close']).difference(sub_sample['nodes']['open']))
-				queue = list(set(queue))
+			nodes = nodes.difference(sub_sample['nodes']['close'])
+			nodes = nodes.difference(sub_sample['nodes']['open'])
+			queue += list(nodes)
+			queue = list(set(queue))
 
 			# Update the sub sample
 			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current)
-			print('Queue: ', len(queue))
-
-
 
 		# Updat the sample with the sub sample
 		self._updateSample(sub_sample)
-		print("Reach {} private users".format(private_count))
 
 	def _snowball_sampling(self):
 
@@ -1258,23 +1254,21 @@ class UndirectedSingleLayer(object):
 		while self._cost < self._budget and len(sub_sample['nodes']['open']) > 0:
 			# Query the neighbors of current
 			nodes, edges, c = self._query.neighbors(current_node)
+			# For tracking
+			self._count_new_nodes(nodes, current_node)
+
 
 			# Update the sub sample
 			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
 
-			if len(nodes) != 0:
-				# For tracking
-				self._count_new_nodes(nodes, current_node)
-
-				# Add edges to sub_graph
-				for e in edges:
-					self._sample_graph.add_edge(e[0], e[1])
+			# Add edges to sub_graph
+			for e in edges:
+				self._sample_graph.add_edge(e[0], e[1])
+			# Update the cost
+			self._increment_cost(c)
 
 			# Candidate nodes are the (open) neighbors of current node
 			candidates = list(set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
-
-			# Update the cost
-			self._increment_cost(c)
 
 			while len(candidates) == 0:
 				current_node = random.choice(list(nodes))
@@ -1815,7 +1809,7 @@ class UndirectedSingleLayer(object):
 			self._line_1.append(nodes_count)
 			self._line_2.append(edges_count)
 
-	def generate_bak(self):
+	def generate(self):
 			"""
 			The main method that calls all the other methods
 			"""
@@ -1863,13 +1857,12 @@ class UndirectedSingleLayer(object):
 				elif self._exp_type == 'sb':
 					self._snowball_sampling()
 				elif self._exp_type == 'bfs':
-					print('bfs')
 					self._bfs()
 				elif self._exp_type == 'test':
 					self._test_algo()
 				else:
 					current_list = self._densification(current)
-					current_list = self._densification_max_score(current)
+					#current_list = self._densification_max_score(current)
 
 				self._densi_count += 1
 
@@ -1887,41 +1880,6 @@ class UndirectedSingleLayer(object):
 			print(self._oracle._communities_selected, len(self._oracle._communities_selected), repititions)
 			"""
 
-	def generate(self):
-			"""
-			The main method that calls all the other methods
-			"""
-			#self._bfs()
-			current_list = []
-
-			sample_G = None
-			is_break = False
-
-
-			current = starting_node
-
-
-			if self._exp_type == 'random':
-				self.random_sampling()
-			elif self._exp_type == 'rw':
-				self._random_walk()
-			elif self._exp_type == 'bfs':
-				print('bfs')
-				self._bfs()
-
-			print('			Budget spent: {}/{}'.format(self._cost, self._budget))
-
-			print('			Number of nodes \t Close: {} \t Open: {}'.format( \
-				len(self._sample['nodes']['close']), \
-				len(self._sample['nodes']['open'])))
-
-			"""
-			repititions = 0
-			for x in self._oracle._communities_selected:
-				repititions += self._oracle._communities_selected[x]
-			repititions = repititions - len(self._oracle._communities_selected)
-			print(self._oracle._communities_selected, len(self._oracle._communities_selected), repititions)
-			"""
 
 def Logging(sample):
 	# Keep the results in file
@@ -1964,24 +1922,11 @@ def Append_Log(sample, type):
 
 	return cost_track
 
-def read_pickle(fname):
-	return pickle.load(open(fname, 'rb'))
-
-def read_profile():
-	print('Reading Profile..')
-	profile = {}
-	with open('./data/soc-pokec-profiles.txt', 'rb') as f:
-		reader = csv.reader(f, delimiter='\t')
-		for row in reader:
-			profile[row[0]] = np.array(row)
-			# [[1,3,4,7,11,13]]
-	return profile
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-task', help='Type of sampling', default='undirected_single')
-	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-3000_attr.pickle')
+	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/soc-pokec-relationships.txt')
 	parser.add_argument('-budget', help='Total budget', type=int, default=0)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
@@ -2004,7 +1949,10 @@ if __name__ == '__main__':
 
 
 	if mode == 1:
+		#exp_list = ['mod','rw','random','sb','bfs']
 		exp_list = ['bfs']
+	elif mode == 2:
+		exp_list = ['rw']
 
 
 	print(exp_list)
@@ -2016,49 +1964,34 @@ if __name__ == '__main__':
 		f = fname.split('.')[1].split('/')[-1]
 		dataset = f
 
-	G = read_pickle(fname)
-	graph = G
+	if args.task == 'undirected_single':
+		G = _mylib.read_file(fname)
+		graph = G
 
-	print('Original: # nodes', G.number_of_nodes())
-	print('Original: # edges', G.number_of_edges())
+		print('Original: # nodes', G.number_of_nodes())
 
+		query = query.UndirectedSingleLayer(graph)
 
-
-	query = query.UndirectedSingleLayer(graph)
-
-	log_file_node = log_file + dataset + '_n.txt'
-	log_file_edge = log_file + dataset + '_e.txt'
-	log_file_order = log_file + dataset + '_order.txt'
-
-	node_public = nx.get_node_attributes(graph, 'public_rand')
-	pub_users = _mylib.get_members_from_com(1, node_public)
-	pri_users = _mylib.get_members_from_com(0, node_public)
-
-	target_node = random.choice(pri_users.tolist())
-	starting_node = query.randomSameCom(target_node)
-
-	print("Public {}, Private {}".format(len(pub_users), len(pri_users)))
-	print("Starting node: {}".format(starting_node))
-	print("Target node: {}".format(target_node))
+		log_file_node = log_file + dataset + '_n.txt'
+		log_file_edge = log_file + dataset + '_e.txt'
+		log_file_order = log_file + dataset + '_order.txt'
 
 
-	# Setup budget
-	n = graph.number_of_nodes()
-	if budget == 0:
+		n = graph.number_of_nodes()
 
-		budget = int(.10*n)
-	print('{} :: Budget set to {} , n={}'.format(dataset, budget, n))
+		if budget == 0:
+			budget = int(.10*n)
+		print('{} Budget set to {} , n={}'.format(dataset, budget, n))
 
-	# Sampling starts here
 	for i in range(0, int(args.experiment)):
 		row = []
 
 		tmp = []
 		for type in exp_list:
-			sample = UndirectedSingleLayer(query, budget, type, dataset, log, log_interval)
+			sample = UndirectedSingleLayer(query, budget, bfs_budget, type, dataset, log, k, is_cost, log_interval)
 
-			# if starting_node == -1:
-			# 	starting_node = sample._query.randomNode()
+			if starting_node == -1:
+				starting_node = sample._query.randomNode()
 
 			print('[{}] Experiment {} starts at node {}'.format(type, i, starting_node))
 
@@ -2067,11 +2000,6 @@ if __name__ == '__main__':
 			# End getting sample
 
 			cost_arr = Append_Log(sample, type)
-
-		if target_node in sample._sample_graph.nodes():
-			degree = sample._sample_graph.degree(target_node)
-			print('Target {} degree {}'.format(target_node, degree))
-
 
 		if 'budget' not in Log_result:
 			Log_result['budget'] = cost_arr
@@ -2085,28 +2013,6 @@ if __name__ == '__main__':
 		else:
 			Log_result_nn['budget'] += range(1,len(sample._track_new_nodes)+1)
 
-		#starting_node = -1
-
-		c_nodes = set(sample._sample['nodes']['close']).union(target_node)
-		sub_g = graph.subgraph(c_nodes)
-
-		is_start = nx.get_node_attributes(sub_g,'is_start')
-		is_start[starting_node] = 1
-
-		nx.set_node_attributes(sub_g, 'is_start', is_start)
-
-
-		is_target = nx.get_node_attributes(sub_g,'is_target')
-		is_target[target_node] = 1
-		nx.set_node_attributes(sub_g, 'is_target', is_target)
-
-
-
-		sample_fn = './output/sample_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
-		pickle.dump(sub_g, open(sample_fn, 'wb'))
-
-
-		# A = nx.to_numpy_matrix(sub_g)
-		# print(A)
-
+		starting_node = -1
+    #
 	# SaveToFile(Log_result, Log_result_edges, Log_result_nn)

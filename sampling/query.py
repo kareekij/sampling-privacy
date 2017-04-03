@@ -3,11 +3,10 @@
 """
 Simulate the API queries
 """
-from __future__ import division, print_function
+
 import networkx as nx
 import random
 import _mylib
-import community
 
 class UndirectedSingleLayer(object):
 	"""
@@ -27,16 +26,10 @@ class UndirectedSingleLayer(object):
 		Return:
 			list[str] -- List of node ids which are neighbors of node
 		"""
-		node_public = nx.get_node_attributes(self._graph, 'public_rand')
-		n = _mylib.get_members_from_com(1,node_public)
+		nodes = self._graph.neighbors(node)
+		edges = [(node, n) for n in nodes]
 
-		if node_public[node] == 1:
-			nodes = self._graph.neighbors(node)
-			edges = [(node, n) for n in nodes]
-
-			return set(nodes), set(edges), self._cost_neighbor
-		else:
-			return set(),set(), self._cost_neighbor
+		return set(nodes), set(edges), self._cost_neighbor
 
 	def randomNode(self):
 		"""
@@ -51,12 +44,9 @@ class UndirectedSingleLayer(object):
 		return random.choice(nodes)
 
 	def randomHighDegreeNode(self):
-		node_public = nx.get_node_attributes(self._graph, 'public_rand')
-		n = _mylib.get_members_from_com(1, node_public)
-
-		degree = self._graph.degree(n.tolist())
+		degree = self._graph.degree()
 		degree_sorted = _mylib.sortDictByValues(degree,reverse=True)
-		size = int(.10 * len(degree))
+		size = int(.3 * len(degree))
 		degree_sorted = degree_sorted[:size]
 		return random.choice(degree_sorted)[0]
 
@@ -67,26 +57,6 @@ class UndirectedSingleLayer(object):
 
 		for n in deg_one_nodes:
 			print(cc[n])
-
-	def randomSameCom(self,target_node):
-		p = community.best_partition(self._graph)
-		com = p[target_node]
-		members = _mylib.get_members_from_com(com,p)
-
-		node_public = nx.get_node_attributes(self._graph, 'public_rand')
-		n = _mylib.get_members_from_com(1, node_public)
-
-		# Get nodes in same com as target node and it is public
-		candidates = set(members).intersection(set(n))
-
-		degree = self._graph.degree(list(candidates))
-		degree_sorted = _mylib.sortDictByValues(degree, reverse=True)
-		size = int(.10 * len(degree))
-		degree_sorted = degree_sorted[:size]
-
-		return random.choice(degree_sorted)[0]
-
-
 
 
 		# deg_nb = 0
