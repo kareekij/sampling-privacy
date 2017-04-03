@@ -16,8 +16,6 @@ class ExtractFeatures(object):
 		super(ExtractFeatures, self).__init__()
 		self.sample_graph = self.read_pickle(sample_pickle)
 
-
-
 	def read_pickle(self, fname):
 		return pickle.load(open(fname, 'rb'))
 
