@@ -26,11 +26,11 @@ class ExtractFeatures(object):
 		return start_node
 
 	def get_target_node(self):
-		target_node = _mylib.get_members_from_com(1, nx.get_node_attributes(G, 'is_target'))
+		target_node = _mylib.get_members_from_com(1, nx.get_node_attributes(self.sample_graph, 'is_target'))
 		return target_node
 
 	def get_profile(self):
-		return nx.get_node_attributes(G, 'public_rand')
+		return nx.get_node_attributes(self.sample_graph, 'public_rand')
 
 	def get_adjacency_matrix(self):
 		return nx.to_numpy_matrix(self.sample_graph)
