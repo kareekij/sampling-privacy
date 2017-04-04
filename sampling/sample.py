@@ -1262,6 +1262,9 @@ class UndirectedSingleLayer(object):
 			# Update the sub sample
 			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
 
+			# Update the cost
+			self._increment_cost(c)
+
 			if len(nodes) != 0:
 				# For tracking
 				self._count_new_nodes(nodes, current_node)
@@ -1272,17 +1275,19 @@ class UndirectedSingleLayer(object):
 
 			# Candidate nodes are the (open) neighbors of current node
 			candidates = list(set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
-
-			# Update the cost
-			self._increment_cost(c)
+			print('		Current: {}, {} neighbors, {} open'.format(current_node, len(nodes), len(candidates)))
 
 			while len(candidates) == 0:
-				current_node = random.choice(list(nodes))
+				if len(nodes) != 0:
+					current_node = random.choice(list(nodes))
+				else:
+					current_node = random.choice(list(self._sample_graph.nodes()))
+				print('	 Walking .. current node', current_node)
 				# Query the neighbors of current
 				nodes, edges, c = self._query.neighbors(current_node)
 				# Candidate nodes are the (open) neighbors of current node
 				candidates = list(set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
-				print("RW: getting stuck")
+				#print("RW: getting stuck")
 
 			current_node = random.choice(candidates)
 
@@ -2005,6 +2010,8 @@ if __name__ == '__main__':
 
 	if mode == 1:
 		exp_list = ['bfs']
+	elif mode == 2:
+		exp_list = ['rw']
 
 
 	print(exp_list)
@@ -2087,6 +2094,7 @@ if __name__ == '__main__':
 
 		#starting_node = -1
 
+		print(target_node)
 		c_nodes = set(sample._sample['nodes']['close']).union(target_node)
 		sub_g = graph.subgraph(c_nodes)
 
@@ -2101,8 +2109,7 @@ if __name__ == '__main__':
 		nx.set_node_attributes(sub_g, 'is_target', is_target)
 
 
-
-		sample_fn = './output/sample_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
+		sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
 		pickle.dump(sub_g, open(sample_fn, 'wb'))
 
 
