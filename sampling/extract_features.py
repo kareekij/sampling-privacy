@@ -44,7 +44,7 @@ class ExtractFeatures(object):
 		return self.sample_graph.degree()
 
 	def get_clustering_coefficient(self):
-		return self.sample_graph.clustering()
+		return nx.clustering(self.sample_graph)
 
 
 
@@ -58,8 +58,9 @@ if __name__ == '__main__':
 	a = (e.get_node_order())
 	b = (e.get_label('gender'))
 
-	print(a[:10])
-	print(b.values()[:10])
+	print(e.get_clustering_coefficient())
+
+
 	#print(e.get_node_order())
 
 	# G = read_pickle(fname)

@@ -2101,16 +2101,15 @@ if __name__ == '__main__':
 		is_start = nx.get_node_attributes(sub_g,'is_start')
 		is_start[starting_node] = 1
 
-		nx.set_node_attributes(sub_g, 'is_start', is_start)
-
+		nx.set_node่_attributes(sub_g, 'is_start', is_start)
 
 		is_target = nx.get_node_attributes(sub_g,'is_target')
 		is_target[target_node] = 1
 		nx.set_node_attributes(sub_g, 'is_target', is_target)
 
 
-		sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
-		pickle.dump(sub_g, open(sample_fn, 'wb'))
+		#sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
+		#pickle.dump(sub_g, open(sample_fn, 'wb'))
 
 
 		# A = nx.to_numpy_matrix(sub_g)
