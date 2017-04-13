@@ -35,7 +35,7 @@ from extract_features import ExtractFeatures
 f = open("output.csv","w")
 f.write("FILENAME, BASIC Target, BASIC, AGG Target, AGG, CC Target, CC, LINK Target, LINK, BLOCK Target, BLOCK, RAND Target, RAND, NN Target, NN\n")
 
-for fileName in glob.glob("../sampling/output/*"):
+for fileName in glob.glob("../sampling/output/sample*"):
     print "\n#################################"
     print "Processing: {0}".format(fileName)
     f.write(fileName)
@@ -45,30 +45,35 @@ for fileName in glob.glob("../sampling/output/*"):
     e = ExtractFeatures(fName)
     nodeList = e.get_node_order()
     status = e.get_profile()
+    degree = e.get_degree()
 
     # Label data that interest
-    numLabel = 2
-    gender = e.get_label('gender')
+    # numLabel = 2
+    # gender = e.get_label('gender')
 
-    # numLabel = 10
-    # age = e.get_label('age')
+    numLabel = 10
+    age = e.get_label('age')
 
     userLabel = []
     userStatus = []
+    userDegree = []
     for node in nodeList:
         tmpLabel = [0 for i in range(numLabel)]
-        tmpLabel[int(gender[node])] = 1
-        # tmpLabel[int(age[node])%10] = 1
+        # tmpLabel[int(gender[node])] = 1
+        tmpLabel[int(age[node])%10] = 1
         userLabel.append(tmpLabel)
         userStatus.append(status[node])
+        userDegree.append(degree[node])
 
     # All information that need to attack
-    userLink = np.array(e.get_adjacency_matrix())
-    userLabel = np.array(userLabel)
-    userStatus = np.array(userStatus)
+    userLink = np.array(e.get_adjacency_matrix()).astype(np.float)
+    userLabel = np.array(userLabel).astype(np.float)
+    userStatus = np.array(userStatus).astype(np.float)
+
 
     # For only target ID
     onlyTarget = nodeList.index(e.get_target_node()[0])
+    # onlyTarget = 0
 
     # Attack without links (BASIC)
     print("#### BASIC ####")
@@ -129,10 +134,10 @@ for fileName in glob.glob("../sampling/output/*"):
         userLabelPredictNew = []
         for target in range(0,len(userStatus)):
             # Do for only private user
-            if userStatus[i] == 0:
+            if userStatus[target] == 0:
                 countLabel = np.array([0 for i in range(numLabel)])
                 countPublic = 0
-                for idx, val in enumerate(userLabel):
+                for idx, val in enumerate(userLabelPredict):
                     # Consider both private and public
                     if idx != target and userLink[idx, target] == 1:
                         countLabel[np.argmax(val)] += 1
@@ -197,12 +202,13 @@ for fileName in glob.glob("../sampling/output/*"):
             for j in range(len(userLink)):
                 if userLink[i][j] == 1 and userStatus[j] == 1:
                     userCount[np.argmax(userLabel[j])] += 1
-            userCount = np.array(userCount).astype(float) / np.sum(userCount)
-            # Find similarity with euclidean
-            dis = [np.linalg.norm(linkCount[k]-userCount) for k in range(linkCount.shape[0])]
-            # Make prediction
-            checkPredict = np.argmax(dis) == np.argmax(userLabel[i])
-            accuracy.append(checkPredict)
+            if np.sum(userCount) != 0:
+                userCount = np.array(userCount).astype(float) / np.sum(userCount)
+                # Find similarity with euclidean
+                dis = [np.linalg.norm(linkCount[k]-userCount) for k in range(linkCount.shape[0])]
+                # Make prediction
+                checkPredict = np.argmax(dis) == np.argmax(userLabel[i])
+                accuracy.append(checkPredict)
             if i == onlyTarget:
                 print checkPredict
                 f.write("," + str(checkPredict))
@@ -225,6 +231,7 @@ for fileName in glob.glob("../sampling/output/*"):
     f.write("," + str(accuracy.count(True) / float(len(accuracy))))
 
     # Attack with Link + Properties (NN)
+    userLink = np.insert(userLink, userLink.shape[1], userDegree, axis=1)
     print("\n#### NN ####")
     trainX = []
     trainY = []
@@ -239,6 +246,13 @@ for fileName in glob.glob("../sampling/output/*"):
         else:
             trainX.append(data)
             trainY.append(userLabel[idx])
+
+    testX = np.array(testX)
+    trainX = np.array(trainX)
+    mean = trainX.mean(axis=0)
+    std = trainX.std(axis=0)
+    trainX = (trainX-mean)/std
+    testX = (testX - mean)/std
 
     nn = NN(len(trainX[0]), len(trainY[0]))
     nn.fit(trainX, trainY, 1000)
