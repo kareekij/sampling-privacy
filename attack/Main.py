@@ -4,7 +4,6 @@ from sklearn import svm
 import sys
 import glob
 from NnTf import NN
-
 sys.path.insert(0, '../sampling')
 from extract_features import ExtractFeatures
 
@@ -36,7 +35,7 @@ from extract_features import ExtractFeatures
 f = open("output.csv","w")
 f.write("FILENAME, BASIC Target, BASIC, AGG Target, AGG, CC Target, CC, LINK Target, LINK, BLOCK Target, BLOCK, RAND Target, RAND, NN Target, NN\n")
 
-for fileName in glob.glob("../sampling/output/sample_500_2*"):
+for fileName in glob.glob("../sampling/output/*"):
     print "\n#################################"
     print "Processing: {0}".format(fileName)
     f.write(fileName)
@@ -51,11 +50,15 @@ for fileName in glob.glob("../sampling/output/sample_500_2*"):
     numLabel = 2
     gender = e.get_label('gender')
 
+    # numLabel = 10
+    # age = e.get_label('age')
+
     userLabel = []
     userStatus = []
     for node in nodeList:
         tmpLabel = [0 for i in range(numLabel)]
         tmpLabel[int(gender[node])] = 1
+        # tmpLabel[int(age[node])%10] = 1
         userLabel.append(tmpLabel)
         userStatus.append(status[node])
 
