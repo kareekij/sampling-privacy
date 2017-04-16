@@ -30,6 +30,7 @@ class UndirectedSingleLayer(object):
 		node_public = nx.get_node_attributes(self._graph, 'public_rand')
 		n = _mylib.get_members_from_com(1,node_public)
 
+		# 1: public, 0: private
 		if node_public[node] == 1:
 			nodes = self._graph.neighbors(node)
 			edges = [(node, n) for n in nodes]
