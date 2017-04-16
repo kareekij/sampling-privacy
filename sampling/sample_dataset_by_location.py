@@ -38,7 +38,7 @@ def read_profile(sel_location):
 			id = row[0]
 			location = row[4]
 			if location == sel_location:
-				profiles.append(id)
+				profile.append(id)
 	return profile
 
 if __name__ == '__main__':
