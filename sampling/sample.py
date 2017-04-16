@@ -1982,6 +1982,29 @@ def read_profile():
 			# [[1,3,4,7,11,13]]
 	return profile
 
+def randomTargetNodes(G, pri_users):
+	deg = G.degree(pri_users)
+	deg_k = deg.keys()
+	deg_v = deg.values()
+
+	DEG_T = 5 # np.mean(np.array(G.degree().values()))
+	print("  Degree T=", DEG_T)
+	sel_deg = 0
+	sel_target = None
+	#print(deg_v)
+	#print(np.where(np.array(deg_v) > DEG_T))
+
+	while sel_deg < DEG_T:
+		sel_target = random.choice(pri_users)
+		sel_deg = deg[sel_target]
+
+	print( "Random Target {} deg {}".format(sel_target, sel_deg))
+
+	return sel_target
+
+
+
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -2041,12 +2064,12 @@ if __name__ == '__main__':
 	pub_users = _mylib.get_members_from_com(1, node_public)
 	pri_users = _mylib.get_members_from_com(0, node_public)
 
-	target_node = random.choice(pri_users.tolist())
+	target_node = randomTargetNodes(G, pri_users)
 	starting_node = query.randomSameCom(target_node)
 
-	print("Public {}, Private {}".format(len(pub_users), len(pri_users)))
-	print("Starting node: {}".format(starting_node))
-	print("Target node: {}".format(target_node))
+	print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
+	print("	- Starting node: {}".format(starting_node))
+	print("	- Target node: {}".format(target_node))
 
 
 	# Setup budget
@@ -2055,6 +2078,9 @@ if __name__ == '__main__':
 
 		budget = int(.10*n)
 	print('{} :: Budget set to {} , n={}'.format(dataset, budget, n))
+
+	#_mylib.degreeHist(G.degree().values())
+	#_mylib.degreeHist_2([G.degree(pub_users).values(), G.degree(pri_users).values()],legend=['public','private'])
 
 	# Sampling starts here
 	for i in range(0, int(args.experiment)):
@@ -2078,6 +2104,8 @@ if __name__ == '__main__':
 		if target_node in sample._sample_graph.nodes():
 			degree = sample._sample_graph.degree(target_node)
 			print('Target {} degree {}'.format(target_node, degree))
+		else:
+			print('Path not found to target {}'.format(target_node))
 
 
 		if 'budget' not in Log_result:
@@ -2101,15 +2129,15 @@ if __name__ == '__main__':
 		is_start = nx.get_node_attributes(sub_g,'is_start')
 		is_start[starting_node] = 1
 
-		nx.set_node่_attributes(sub_g, 'is_start', is_start)
+		nx.set_node_attributes(sub_g, 'is_start', is_start)
 
 		is_target = nx.get_node_attributes(sub_g,'is_target')
 		is_target[target_node] = 1
 		nx.set_node_attributes(sub_g, 'is_target', is_target)
 
 
-		#sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
-		#pickle.dump(sub_g, open(sample_fn, 'wb'))
+		sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
+		pickle.dump(sub_g, open(sample_fn, 'wb'))
 
 
 		# A = nx.to_numpy_matrix(sub_g)
