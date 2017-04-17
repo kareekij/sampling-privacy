@@ -1166,6 +1166,7 @@ class UndirectedSingleLayer(object):
 		sub_sample['nodes']['open'].add(current)
 		queue = [current]
 		private_count = 0
+
 		# Run till bfs budget allocated or no nodes left in queue
 		while self._cost < self._budget and len(queue) > 0:
 			# Select the first node from queue
@@ -1174,16 +1175,19 @@ class UndirectedSingleLayer(object):
 			# Get the neighbors - nodes and edges; and cost associated
 			nodes, edges, c = self._query.neighbors(current)
 
+			if current != target_node:
+				self._increment_cost(c)
+
 			if len(nodes) != 0:
 				self._count_new_nodes(nodes, current)
-				self._increment_cost(c)
+
 				for e in edges:
 					self._sample_graph.add_edge(e[0], e[1])
 
 				if target_node in set(nodes):
-					print('!! Target found')
+					print(' -- Target found ! --')
 			else:
-				print('Private user queried')
+				#print('		Private user queried')
 				private_count += 1
 
 			# Remove the current node from queue
@@ -1196,13 +1200,13 @@ class UndirectedSingleLayer(object):
 
 			# Update the sub sample
 			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current)
-			print('Queue: ', len(queue))
+			#print('Queue: ', len(queue))
 
 
 
 		# Updat the sample with the sub sample
 		self._updateSample(sub_sample)
-		print("Reach {} private users".format(private_count))
+		print("Reach {} private users, {} total users found".format(private_count, self._sample_graph.number_of_nodes()))
 
 	def _snowball_sampling(self):
 
@@ -1820,78 +1824,6 @@ class UndirectedSingleLayer(object):
 			self._line_1.append(nodes_count)
 			self._line_2.append(edges_count)
 
-	def generate_bak(self):
-			"""
-			The main method that calls all the other methods
-			"""
-			#self._bfs()
-			current_list = []
-
-			sample_G = None
-			is_break = False
-
-			# Sample until budget runs out or thero are no more open nodes
-			while self._cost < self._budget:
-
-				# If there are no more nodes in current list, use open nodes from sample
-				if len(current_list) < 1:
-					current_list = list(self._sample['nodes']['open'])
-
-				# Perform expansion
-				if len(current_list) != 0:
-					self._stage = 'exp'
-					if self._exp_type == 'oracle':
-						current_list = self._getExpNodes()
-						current = self._expansion(current_list)
-						self._exp_count += 1
-					elif self._exp_type == 'random-exp':
-						current = self._expansion_random(self._sample['nodes']['open'])
-						self._exp_count += 1
-					elif self._exp_type == 'percentile-exp':
-						current = self._sample_open_node(current_list)
-						self._exp_count += 1
-				else:
-					current = starting_node
-
-				# Perform densification
-				self._stage = 'den'
-				if self._exp_type == 'random':
-					self.random_sampling()
-				elif self._exp_type == 'rw':
-					self._random_walk()
-				elif self._exp_type == 'mod':
-					self._max_obs_deg()
-				elif self._exp_type == 'max-score':
-					self._max_score()
-				elif self._exp_type == 'oracle':
-					current_list = self._densification_oracle(current)
-				elif self._exp_type == 'sb':
-					self._snowball_sampling()
-				elif self._exp_type == 'bfs':
-					print('bfs')
-					self._bfs()
-				elif self._exp_type == 'test':
-					self._test_algo()
-				else:
-					current_list = self._densification(current)
-					current_list = self._densification_max_score(current)
-
-				self._densi_count += 1
-
-				print('			Budget spent: {}/{}'.format(self._cost, self._budget))
-
-			print('			Number of nodes \t Close: {} \t Open: {}'.format( \
-				len(self._sample['nodes']['close']), \
-				len(self._sample['nodes']['open'])))
-
-			"""
-			repititions = 0
-			for x in self._oracle._communities_selected:
-				repititions += self._oracle._communities_selected[x]
-			repititions = repititions - len(self._oracle._communities_selected)
-			print(self._oracle._communities_selected, len(self._oracle._communities_selected), repititions)
-			"""
-
 	def generate(self):
 			"""
 			The main method that calls all the other methods
@@ -1982,12 +1914,35 @@ def read_profile():
 			# [[1,3,4,7,11,13]]
 	return profile
 
+def randomTargetNodes(G, pri_users):
+	deg = G.degree(pri_users)
+	deg_k = deg.keys()
+	deg_v = deg.values()
+
+	DEG_T = 5
+	DEG_MEAN = np.mean(np.array(G.degree().values()))
+	DEG_MED = np.median(np.array(G.degree().values()))
+	print("  Degree T= {} Mean: {} Med: {}".format(DEG_T, DEG_MEAN, DEG_MED))
+	sel_deg = 0
+	sel_target = None
+
+	while sel_deg < DEG_T:
+		sel_target = random.choice(pri_users)
+		sel_deg = deg[sel_target]
+
+	print( "Random Target {} deg {}".format(sel_target, sel_deg))
+
+	return sel_target
+
+
+
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-task', help='Type of sampling', default='undirected_single')
-	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-3000_attr.pickle')
-	parser.add_argument('-budget', help='Total budget', type=int, default=0)
+	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-loc-7654_attr.pickle')
+	parser.add_argument('-budget', help='Total budget', type=int, default=500)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
 	parser.add_argument('-experiment', help='# of experiment', default=1)
@@ -2038,15 +1993,16 @@ if __name__ == '__main__':
 	log_file_order = log_file + dataset + '_order.txt'
 
 	node_public = nx.get_node_attributes(graph, 'public_rand')
+
 	pub_users = _mylib.get_members_from_com(1, node_public)
 	pri_users = _mylib.get_members_from_com(0, node_public)
 
-	target_node = random.choice(pri_users.tolist())
+	target_node = randomTargetNodes(G, pri_users)
 	starting_node = query.randomSameCom(target_node)
 
-	print("Public {}, Private {}".format(len(pub_users), len(pri_users)))
-	print("Starting node: {}".format(starting_node))
-	print("Target node: {}".format(target_node))
+	print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
+	print("	- Starting node: {}".format(starting_node))
+	print("	- Target node: {}".format(target_node))
 
 
 	# Setup budget
@@ -2055,6 +2011,9 @@ if __name__ == '__main__':
 
 		budget = int(.10*n)
 	print('{} :: Budget set to {} , n={}'.format(dataset, budget, n))
+
+	#_mylib.degreeHist(G.degree().values())
+	#_mylib.degreeHist_2([G.degree(pub_users).values(), G.degree(pri_users).values()],legend=['public','private'])
 
 	# Sampling starts here
 	for i in range(0, int(args.experiment)):
@@ -2073,43 +2032,44 @@ if __name__ == '__main__':
 			sample.generate()
 			# End getting sample
 
-			cost_arr = Append_Log(sample, type)
+			#cost_arr = Append_Log(sample, type)
 
 		if target_node in sample._sample_graph.nodes():
 			degree = sample._sample_graph.degree(target_node)
 			print('Target {} degree {}'.format(target_node, degree))
 
+			c_nodes = set(sample._sample['nodes']['close'])
+			c_nodes.add(target_node)
+			sub_g = graph.subgraph(c_nodes)
 
-		if 'budget' not in Log_result:
-			Log_result['budget'] = cost_arr
-			Log_result_edges['budget'] = cost_arr
+			target_nbs = sample._sample_graph.neighbors(target_node)
+			target_nbs_c  = set(target_nbs).intersection(c_nodes)
+
+			print('		Target nbs count {} , {} are closed nodes'.format(len(target_nbs), len(target_nbs_c)))
+			print('		Closed Nodes {}, in sample {}'.format(len(c_nodes), sub_g.number_of_nodes() ) )
+
+			is_start = nx.get_node_attributes(sub_g, 'is_start')
+			is_start[starting_node] = 1
+
+			nx.set_node_attributes(sub_g, 'is_start', is_start)
+
+			is_target = nx.get_node_attributes(sub_g, 'is_target')
+			is_target[target_node] = 1
+
+
+
+			nx.set_node_attributes(sub_g, 'is_target', is_target)
+
+			sample_fn = './output/loc-private-20/sample_' + type + '_' + str(budget) + '_' + str(
+				len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+			pickle.dump(sub_g, open(sample_fn, 'wb'))
+
+
 		else:
-			Log_result['budget'] += (cost_arr)
-			Log_result_edges['budget'] += (cost_arr)
-
-		if 'budget' not in Log_result_nn:
-			Log_result_nn['budget'] = range(1,len(sample._track_new_nodes)+1)
-		else:
-			Log_result_nn['budget'] += range(1,len(sample._track_new_nodes)+1)
-
-		#starting_node = -1
-
-		print(target_node)
-		c_nodes = set(sample._sample['nodes']['close']).union(target_node)
-		sub_g = graph.subgraph(c_nodes)
-
-		is_start = nx.get_node_attributes(sub_g,'is_start')
-		is_start[starting_node] = 1
-
-		nx.set_node่_attributes(sub_g, 'is_start', is_start)
-
-		is_target = nx.get_node_attributes(sub_g,'is_target')
-		is_target[target_node] = 1
-		nx.set_node_attributes(sub_g, 'is_target', is_target)
+			print('Path not found to target {}'.format(target_node))
 
 
-		#sample_fn = './output/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '.pickle'
-		#pickle.dump(sub_g, open(sample_fn, 'wb'))
+
 
 
 		# A = nx.to_numpy_matrix(sub_g)

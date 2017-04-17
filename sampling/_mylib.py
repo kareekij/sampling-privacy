@@ -362,7 +362,7 @@ def degreeHist(deg,log_log=True, save=True):
     if not save:
         plt.show()
     else:
-        plt.savefig('./draw/plot/loglog_' + str(time.time()) + '.png')
+        plt.savefig('./draw/loglog_' + str(time.time()) + '.png')
 
     plt.clf()
 
@@ -392,7 +392,7 @@ def degreeHist_2(deg_l,log_log=True, save=True, legend=['In-degree','Out-degree'
     if not save:
         plt.show()
     else:
-        plt.savefig('./draw/plot/deg_2_' + str(time.time()) + '.png')
+        plt.savefig('./draw/deg_2_' + str(time.time()) + '.png')
 
     plt.clf()
 
