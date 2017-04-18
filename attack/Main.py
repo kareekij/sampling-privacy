@@ -44,7 +44,7 @@ for fileName in glob.glob("../sampling/output/"+sys.argv[2]+"/*"):
         age = e.get_label('age')
         for node in nodeList:
             tmpLabel = [0 for i in range(numLabel)]
-            tmp = int(age[node])/
+            tmp = int(age[node])/10
             classLabel = tmp if tmp < numLabel else numLabel-1
             tmpLabel[classLabel] = 1
             userLabel.append(tmpLabel)
