@@ -1941,7 +1941,7 @@ def randomTargetNodes(G, pri_users):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-task', help='Type of sampling', default='undirected_single')
-	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-loc-7654_attr.pickle')
+	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data-input/pokec-loc-7654_attr_30.pickle')
 	parser.add_argument('-budget', help='Total budget', type=int, default=500)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
@@ -1949,6 +1949,7 @@ if __name__ == '__main__':
 	parser.add_argument('-log_interval', help='# of budget interval for logging', type=int, default=10)
 	parser.add_argument('-mode', help='mode', type=int, default=1)
 	parser.add_argument('-delimiter', help='csv delimiter', type=str, default=None)
+	parser.add_argument('-n', help='n', type=str, default=20)
 
 	args = parser.parse_args()
 
@@ -1961,6 +1962,7 @@ if __name__ == '__main__':
 	log_interval = args.log_interval
 	mode = args.mode
 	delimeter = args.delimiter
+	fold_n = args.n
 
 
 	if mode == 1:
@@ -2012,15 +2014,16 @@ if __name__ == '__main__':
 	for i in range(0, int(args.experiment)):
 		row = []
 		tmp = []
-
-		target_node = randomTargetNodes(G, pri_users)
-		starting_node = query.randomSameCom(target_node)
-
-		print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
-		print("	- Starting node: {}".format(starting_node))
-		print("	- Target node: {}".format(target_node))
 		isDone = False
 		while not isDone:
+
+			target_node = randomTargetNodes(G, pri_users)
+			starting_node = query.randomSameCom(target_node)
+
+			print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
+			print("	- Starting node: {}".format(starting_node))
+			print("	- Target node: {}".format(target_node))
+
 			for type in exp_list:
 				sample = UndirectedSingleLayer(query, budget, type, dataset, log, log_interval)
 
@@ -2061,7 +2064,7 @@ if __name__ == '__main__':
 
 				nx.set_node_attributes(sub_g, 'is_target', is_target)
 
-				sample_fn = './output/loc-private-20-new/sample_' + type + '_' + str(budget) + '_' + str(
+				sample_fn = './output/private-exp-'+ fold_n + '/sample_' + type + '_' + str(budget) + '_' + str(
 					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
 				pickle.dump(sub_g, open(sample_fn, 'wb'))
 				isDone = True
