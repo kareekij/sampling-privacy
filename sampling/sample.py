@@ -1962,7 +1962,7 @@ if __name__ == '__main__':
 	log_interval = args.log_interval
 	mode = args.mode
 	delimeter = args.delimiter
-	fold_n = arg.n
+	fold_n = args.n
 
 
 	if mode == 1:
