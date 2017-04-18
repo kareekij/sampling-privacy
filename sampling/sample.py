@@ -2064,8 +2064,7 @@ if __name__ == '__main__':
 
 				nx.set_node_attributes(sub_g, 'is_target', is_target)
 
-				sample_fn = './output/private-exp-'+ fold_n + '/sample_' + type + '_' + str(budget) + '_' + str(
-					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+				sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
 				pickle.dump(sub_g, open(sample_fn, 'wb'))
 				isDone = True
 
