@@ -1938,7 +1938,7 @@ def read_profile():
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-task', help='Type of sampling', default='undirected_single')
-	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-3000.pickle')
+	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data/pokec-loc-7654.pickle')
 	parser.add_argument('-budget', help='Total budget', type=int, default=0)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
@@ -1946,6 +1946,7 @@ if __name__ == '__main__':
 	parser.add_argument('-log_interval', help='# of budget interval for logging', type=int, default=10)
 	parser.add_argument('-mode', help='mode', type=int, default=1)
 	parser.add_argument('-delimiter', help='csv delimiter', type=str, default=None)
+	parser.add_argument('-pub', help='public ratio', type=int, default=None)
 
 	args = parser.parse_args()
 
@@ -1958,6 +1959,7 @@ if __name__ == '__main__':
 	log_interval = args.log_interval
 	mode = args.mode
 	delimeter = args.delimiter
+	pub_ratio = args.pub
 
 
 
@@ -1975,8 +1977,9 @@ if __name__ == '__main__':
 
 	# Percent of public nodes
 	# Default 50 percent
-	T = 0.8
+	T = (pub_ratio/100)
 	count = 0
+	print('Public {} percent'.format(T))
 
 	d_profile = {}
 	d_profile_rand = {}
@@ -2034,7 +2037,7 @@ if __name__ == '__main__':
 	nx.set_node_attributes(G, 'comp_edu', d_comp_edu)
 
 	print(count)
-	f_w = '.' + fname.split('.')[1] + '_attr.pickle'
+	f_w = '.' + fname.split('.')[1] + '_attr_'+ str(100-pub_ratio)+'.pickle'
 	print(f_w)
 
 	node_public = nx.get_node_attributes(G, 'public_rand')
