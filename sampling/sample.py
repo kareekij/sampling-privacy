@@ -1997,13 +1997,6 @@ if __name__ == '__main__':
 	pub_users = _mylib.get_members_from_com(1, node_public)
 	pri_users = _mylib.get_members_from_com(0, node_public)
 
-	target_node = randomTargetNodes(G, pri_users)
-	starting_node = query.randomSameCom(target_node)
-
-	print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
-	print("	- Starting node: {}".format(starting_node))
-	print("	- Target node: {}".format(target_node))
-
 
 	# Setup budget
 	n = graph.number_of_nodes()
@@ -2018,55 +2011,63 @@ if __name__ == '__main__':
 	# Sampling starts here
 	for i in range(0, int(args.experiment)):
 		row = []
-
 		tmp = []
-		for type in exp_list:
-			sample = UndirectedSingleLayer(query, budget, type, dataset, log, log_interval)
 
-			# if starting_node == -1:
-			# 	starting_node = sample._query.randomNode()
+		target_node = randomTargetNodes(G, pri_users)
+		starting_node = query.randomSameCom(target_node)
 
-			print('[{}] Experiment {} starts at node {}'.format(type, i, starting_node))
+		print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
+		print("	- Starting node: {}".format(starting_node))
+		print("	- Target node: {}".format(target_node))
+		isDone = False
+		while not isDone:
+			for type in exp_list:
+				sample = UndirectedSingleLayer(query, budget, type, dataset, log, log_interval)
 
-			# Getting sample
-			sample.generate()
-			# End getting sample
+				# if starting_node == -1:
+				# 	starting_node = sample._query.randomNode()
 
-			#cost_arr = Append_Log(sample, type)
+				print('[{}] Experiment {} starts at node {}'.format(type, i, starting_node))
 
-		if target_node in sample._sample_graph.nodes():
-			degree = sample._sample_graph.degree(target_node)
-			print('Target {} degree {}'.format(target_node, degree))
+				# Getting sample
+				sample.generate()
+				# End getting sample
 
-			c_nodes = set(sample._sample['nodes']['close'])
-			c_nodes.add(target_node)
-			sub_g = graph.subgraph(c_nodes)
+				#cost_arr = Append_Log(sample, type)
 
-			target_nbs = sample._sample_graph.neighbors(target_node)
-			target_nbs_c  = set(target_nbs).intersection(c_nodes)
+			if target_node in sample._sample_graph.nodes():
+				degree = sample._sample_graph.degree(target_node)
+				print('Target {} degree {}'.format(target_node, degree))
 
-			print('		Target nbs count {} , {} are closed nodes'.format(len(target_nbs), len(target_nbs_c)))
-			print('		Closed Nodes {}, in sample {}'.format(len(c_nodes), sub_g.number_of_nodes() ) )
+				c_nodes = set(sample._sample['nodes']['close'])
+				c_nodes.add(target_node)
+				sub_g = graph.subgraph(c_nodes)
 
-			is_start = nx.get_node_attributes(sub_g, 'is_start')
-			is_start[starting_node] = 1
+				target_nbs = sample._sample_graph.neighbors(target_node)
+				target_nbs_c  = set(target_nbs).intersection(c_nodes)
 
-			nx.set_node_attributes(sub_g, 'is_start', is_start)
+				print('		Target nbs count {} , {} are closed nodes'.format(len(target_nbs), len(target_nbs_c)))
+				print('		Closed Nodes {}, in sample {}'.format(len(c_nodes), sub_g.number_of_nodes() ) )
 
-			is_target = nx.get_node_attributes(sub_g, 'is_target')
-			is_target[target_node] = 1
+				is_start = nx.get_node_attributes(sub_g, 'is_start')
+				is_start[starting_node] = 1
 
+				nx.set_node_attributes(sub_g, 'is_start', is_start)
 
-
-			nx.set_node_attributes(sub_g, 'is_target', is_target)
-
-			sample_fn = './output/loc-private-20/sample_' + type + '_' + str(budget) + '_' + str(
-				len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-			pickle.dump(sub_g, open(sample_fn, 'wb'))
+				is_target = nx.get_node_attributes(sub_g, 'is_target')
+				is_target[target_node] = 1
 
 
-		else:
-			print('Path not found to target {}'.format(target_node))
+
+				nx.set_node_attributes(sub_g, 'is_target', is_target)
+
+				sample_fn = './output/loc-private-20-new/sample_' + type + '_' + str(budget) + '_' + str(
+					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+				pickle.dump(sub_g, open(sample_fn, 'wb'))
+				isDone = True
+
+			else:
+				print('Path not found to target {}'.format(target_node))
 
 
 
