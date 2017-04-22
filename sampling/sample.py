@@ -1926,14 +1926,17 @@ def randomTargetNodes(G, pri_users, gender_dict, sel_gender):
 
 	sel_target = random.choice(pri_users)
 	sel_deg = deg[sel_target]
+	sel_target_gender = gender_dict[sel_target]
 
-	while sel_deg < DEG_T and gender_dict[sel_target] != sel_gender:
+	while not (sel_deg >= DEG_T and int(sel_target_gender) == int(sel_gender)):
 		sel_target = random.choice(pri_users)
 		sel_deg = deg[sel_target]
+		sel_target_gender = gender_dict[sel_target]
+#		print('Test', sel_gender, sel_target_gender, sel_deg, (sel_deg >= DEG_T), ((sel_deg >= DEG_T and sel_target_gender == sel_gender)))
 
-	print( "Random Target {} deg {}, gender {}".format(sel_target, sel_deg, gender_dict[sel_target]))
+	#print( "Random Target {} deg {}, gender {}".format(sel_target, sel_deg, sel_target_gender))
 
-	return sel_target, gender_dict[sel_target]
+	return sel_target, sel_target_gender
 
 
 
@@ -1943,10 +1946,10 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-task', help='Type of sampling', default='undirected_single')
 	parser.add_argument('-fname', help='Edgelist file', type=str, default='./data-input/pokec-loc-7654_attr_30.pickle')
-	parser.add_argument('-budget', help='Total budget', type=int, default=500)
+	parser.add_argument('-budget', help='Total budget', type=int, default=1000)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
-	parser.add_argument('-experiment', help='# of experiment', default=5)
+	parser.add_argument('-experiment', help='# of experiment', default=10)
 	parser.add_argument('-log_interval', help='# of budget interval for lไogging', type=int, default=10)
 	parser.add_argument('-mode', help='mode', type=int, default=1)
 	parser.add_argument('-delimiter', help='csv delimiter', type=str, default=None)
@@ -2027,7 +2030,7 @@ if __name__ == '__main__':
 		while not isDone:
 			sel_gender = (i+1) % 2
 			target_node, target_gender = randomTargetNodes(G, pri_users, gender_dict, sel_gender)
-			#target_node = str(targets_sel[i])
+			#print(sel_gender, target_gender)
 			starting_node = query.randomSameCom(target_node)
 
 			print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
@@ -2086,7 +2089,8 @@ if __name__ == '__main__':
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
 				#folder_n = './output2/budget-exp-private-20/budget-'+str(budget)
-				folder_n = './output2/loc-private-20'
+				#folder_n = './output2/loc-private-20'
+				folder_n = './output2/private-exp-budget-1000/private-' + str(fold_n)
 				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(target_gender) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
@@ -2095,12 +2099,3 @@ if __name__ == '__main__':
 				isDone = True
 			else:
 				print('Path not found to target {}'.format(target_node))
-
-
-
-
-
-		# A = nx.to_numpy_matrix(sub_g)
-		# print(A)
-
-	# SaveToFile(Log_result, Log_result_edges, Log_result_nn)
