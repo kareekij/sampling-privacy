@@ -1914,7 +1914,7 @@ def read_profile():
 			# [[1,3,4,7,11,13]]
 	return profile
 
-def randomTargetNodes(G, pri_users):
+def randomTargetNodes(G, pri_users, gender_dict, sel_gender):
 	deg = G.degree(pri_users)
 	deg_k = deg.keys()
 	deg_v = deg.values()
@@ -1923,14 +1923,15 @@ def randomTargetNodes(G, pri_users):
 	DEG_MEAN = np.mean(np.array(G.degree().values()))
 	DEG_MED = np.median(np.array(G.degree().values()))
 	print("  Degree T= {} Mean: {} Med: {}".format(DEG_T, DEG_MEAN, DEG_MED))
-	sel_deg = 0
-	sel_target = None
 
-	while sel_deg < DEG_T:
+	sel_target = random.choice(pri_users)
+	sel_deg = deg[sel_target]
+
+	while sel_deg < DEG_T and gender_dict[sel_target] != sel_gender:
 		sel_target = random.choice(pri_users)
 		sel_deg = deg[sel_target]
 
-	print( "Random Target {} deg {}".format(sel_target, sel_deg))
+	print( "Random Target {} deg {}, gender {}".format(sel_target, sel_deg, gender_dict[sel_target]))
 
 	return sel_target
 
@@ -2007,9 +2008,9 @@ if __name__ == '__main__':
 		budget = int(.10*n)
 	print('{} :: Budget set to {} , n={}'.format(dataset, budget, n))
 
-	node_public = nx.get_node_attributes(graph, 'gender')
-	group1 = _mylib.get_members_from_com('1', node_public)
-	group2 = _mylib.get_members_from_com('0', node_public)
+	gender_dict = nx.get_node_attributes(graph, 'gender')
+	#group1 = _mylib.get_members_from_com('1', gender_dict)
+	#group2 = _mylib.get_members_from_com('0', gender_dict)
 
 
 	#print(len(group1), len(group2))
@@ -2021,11 +2022,11 @@ if __name__ == '__main__':
 	for i in range(0, int(args.experiment)):
 		row = []
 		tmp = []
-		targets_sel = [974775, 447622, 240731, 21729, 982749, 642315, 368241, 1420921, 248330, 1035964, 475316, 256294, 593567, 789731]
+		#targets_sel = [974775, 447622, 240731, 21729, 982749, 642315, 368241, 1420921, 248330, 1035964, 475316, 256294, 593567, 789731]
 		isDone = False
 		while not isDone:
-
-			target_node = randomTargetNodes(G, pri_users)
+			sel_gender = i % 2
+			target_node = randomTargetNodes(G, pri_users, gender_dict, sel_gender)
 			#target_node = str(targets_sel[i])
 			starting_node = query.randomSameCom(target_node)
 
@@ -2084,8 +2085,8 @@ if __name__ == '__main__':
 				print('Target', b)
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				sample_fn = './output2/budget-exp-private-20/budget-'+str(budget)+'/sample_' + type + '_' + str(budget) + '_' + str(
-					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+				folder_n = './output2/budget-exp-private-20/budget-'+str(budget)
+				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(sel_gender) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
 				pickle.dump(sub_g, open(sample_fn, 'wb'))

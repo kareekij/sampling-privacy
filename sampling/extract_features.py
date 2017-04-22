@@ -63,7 +63,12 @@ if __name__ == '__main__':
 	e = ExtractFeatures(fname)
 
 	print(e.get_start_node())
-	print(e.get_target_node())
+	t = e.get_target_node()
+	print(t)
+	b = (e.get_label('gender'))
+	print(type(b[t[0]]))
+
+
 	#a = (e.get_node_order())
 	#b = (e.get_label('gender'))
 
