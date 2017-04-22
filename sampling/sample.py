@@ -1945,8 +1945,8 @@ if __name__ == '__main__':
 	parser.add_argument('-budget', help='Total budget', type=int, default=500)
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
-	parser.add_argument('-experiment', help='# of experiment', default=1)
-	parser.add_argument('-log_interval', help='# of budget interval for logging', type=int, default=10)
+	parser.add_argument('-experiment', help='# of experiment', default=5)
+	parser.add_argument('-log_interval', help='# of budget interval for lไogging', type=int, default=10)
 	parser.add_argument('-mode', help='mode', type=int, default=1)
 	parser.add_argument('-delimiter', help='csv delimiter', type=str, default=None)
 	parser.add_argument('-n', help='n', type=str, default=20)
@@ -2007,6 +2007,13 @@ if __name__ == '__main__':
 		budget = int(.10*n)
 	print('{} :: Budget set to {} , n={}'.format(dataset, budget, n))
 
+	node_public = nx.get_node_attributes(graph, 'gender')
+	group1 = _mylib.get_members_from_com('1', node_public)
+	group2 = _mylib.get_members_from_com('0', node_public)
+
+
+	#print(len(group1), len(group2))
+
 	#_mylib.degreeHist(G.degree().values())
 	#_mylib.degreeHist_2([G.degree(pub_users).values(), G.degree(pri_users).values()],legend=['public','private'])
 
@@ -2014,6 +2021,7 @@ if __name__ == '__main__':
 	for i in range(0, int(args.experiment)):
 		row = []
 		tmp = []
+
 		isDone = False
 		while not isDone:
 
@@ -2044,6 +2052,7 @@ if __name__ == '__main__':
 
 				c_nodes = set(sample._sample['nodes']['close'])
 				c_nodes.add(target_node)
+				sub_g = nx.Graph()
 				sub_g = graph.subgraph(c_nodes)
 
 				target_nbs = sample._sample_graph.neighbors(target_node)
@@ -2053,22 +2062,34 @@ if __name__ == '__main__':
 				print('		Closed Nodes {}, in sample {}'.format(len(c_nodes), sub_g.number_of_nodes() ) )
 
 				is_start = nx.get_node_attributes(sub_g, 'is_start')
+				a = _mylib.get_members_from_com(1, nx.get_node_attributes(sub_g, 'is_start'))
+				for aa in a:
+					is_start[aa] = 0
 				is_start[starting_node] = 1
 
 				nx.set_node_attributes(sub_g, 'is_start', is_start)
 
 				is_target = nx.get_node_attributes(sub_g, 'is_target')
+				a = _mylib.get_members_from_com(1, nx.get_node_attributes(sub_g, 'is_target'))
+				for aa in a:
+					is_target[aa] = 0
 				is_target[target_node] = 1
-
-
 
 				nx.set_node_attributes(sub_g, 'is_target', is_target)
 
-				sample_fn = './output/private-exp-'+ fold_n + '/sample_' + type + '_' + str(budget) + '_' + str(
-					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				pickle.dump(sub_g, open(sample_fn, 'wb'))
-				isDone = True
+				a = _mylib.get_members_from_com(1, nx.get_node_attributes(sub_g, 'is_start'))
+				b = _mylib.get_members_from_com(1, nx.get_node_attributes(sub_g, 'is_target'))
+				print('Start', a)
+				print('Target', b)
 
+				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+				sample_fn = './output2/loc-private-20/sample_' + type + '_' + str(budget) + '_' + str(
+					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
+
+				#sample_fn = './output/test'+ str(i) +'.pickle'
+				pickle.dump(sub_g, open(sample_fn, 'wb'))
+
+				isDone = True
 			else:
 				print('Path not found to target {}'.format(target_node))
 
