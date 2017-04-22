@@ -10,6 +10,7 @@ import math
 import argparse
 import pickle
 import _mylib
+import glob, os
 
 class ExtractFeatures(object):
 	def __init__(self, sample_pickle):
@@ -57,16 +58,23 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	print(args)
-
 	fname = args.fname
 
-	e = ExtractFeatures(fname)
+	os.chdir(fname)
+	for file in glob.glob("*.pickle"):
+		name = fname + '/' + file
+		#print(name)
+		e = ExtractFeatures(file)
 
-	print(e.get_start_node())
-	t = e.get_target_node()
-	print(t)
-	b = (e.get_label('gender'))
-	print(type(b[t[0]]))
+		#print(e.get_start_node())
+		t = e.get_target_node()
+		#print(t)
+		b = (e.get_label('gender'))
+		print((b[t[0]]), file, t)
+
+
+
+
 
 
 	#a = (e.get_node_order())

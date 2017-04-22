@@ -1933,7 +1933,7 @@ def randomTargetNodes(G, pri_users, gender_dict, sel_gender):
 
 	print( "Random Target {} deg {}, gender {}".format(sel_target, sel_deg, gender_dict[sel_target]))
 
-	return sel_target
+	return sel_target, gender_dict[sel_target]
 
 
 
@@ -2025,8 +2025,8 @@ if __name__ == '__main__':
 		#targets_sel = [974775, 447622, 240731, 21729, 982749, 642315, 368241, 1420921, 248330, 1035964, 475316, 256294, 593567, 789731]
 		isDone = False
 		while not isDone:
-			sel_gender = i % 2
-			target_node = randomTargetNodes(G, pri_users, gender_dict, sel_gender)
+			sel_gender = (i+1) % 2
+			target_node, target_gender = randomTargetNodes(G, pri_users, gender_dict, sel_gender)
 			#target_node = str(targets_sel[i])
 			starting_node = query.randomSameCom(target_node)
 
@@ -2085,8 +2085,9 @@ if __name__ == '__main__':
 				print('Target', b)
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				folder_n = './output2/budget-exp-private-20/budget-'+str(budget)
-				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(sel_gender) + '.pickle'
+				#folder_n = './output2/budget-exp-private-20/budget-'+str(budget)
+				folder_n = './output2/loc-private-20'
+				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(target_gender) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
 				pickle.dump(sub_g, open(sample_fn, 'wb'))
