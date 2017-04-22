@@ -50,15 +50,24 @@ class ExtractFeatures(object):
 
 
 if __name__ == '__main__':
-	fname = './output/sample_500_610.pickle'
+	parser = argparse.ArgumentParser()
+	parser.add_argument('fname', help='filename')
+	#fname = '/Users/Katchaguy/Documents/OneDrive/PhD/CIS700-MLforSec/project/sampling-privacy/sampling/output/budget-exp-20/budget-1000/sample_bfs_1000_1001_1_1492483536.34.pickle'
+
+	args = parser.parse_args()
+
+	print(args)
+
+	fname = args.fname
 
 	e = ExtractFeatures(fname)
 
 	print(e.get_start_node())
-	a = (e.get_node_order())
-	b = (e.get_label('gender'))
+	print(e.get_target_node())
+	#a = (e.get_node_order())
+	#b = (e.get_label('gender'))
 
-	print(e.get_clustering_coefficient())
+	#print(e.get_clustering_coefficient())
 
 
 	#print(e.get_node_order())
