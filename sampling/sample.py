@@ -2021,11 +2021,12 @@ if __name__ == '__main__':
 	for i in range(0, int(args.experiment)):
 		row = []
 		tmp = []
-
+		targets_sel = [974775, 447622, 240731, 21729, 982749, 642315, 368241, 1420921, 248330, 1035964, 475316, 256294, 593567, 789731]
 		isDone = False
 		while not isDone:
 
 			target_node = randomTargetNodes(G, pri_users)
+			#target_node = str(targets_sel[i])
 			starting_node = query.randomSameCom(target_node)
 
 			print("	- Public {}, Private {}".format(len(pub_users), len(pri_users)))
@@ -2083,7 +2084,7 @@ if __name__ == '__main__':
 				print('Target', b)
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				sample_fn = './output2/loc-private-20/sample_' + type + '_' + str(budget) + '_' + str(
+				sample_fn = './output2/budget-exp-private-20/budget-'+str(budget)+'/sample_' + type + '_' + str(budget) + '_' + str(
 					len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
