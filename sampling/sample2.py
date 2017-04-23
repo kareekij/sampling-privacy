@@ -972,9 +972,9 @@ if __name__ == '__main__':
 				print('Target', b)
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				folder_n = './outputRW/budget-exp-private-20/budget-'+str(budget)
+				#folder_n = './outputRW/budget-exp-private-20/budget-'+str(budget)
 				#folder_n = './outputRW/loc-private-20'
-				#folder_n = './outputRW/private-exp-budget-1000/private-' + str(fold_n)
+				folder_n = './outputRW/private-exp-budget-1000/private-' + str(fold_n)
 				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(target_gender) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
