@@ -166,8 +166,8 @@ class UndirectedSingleLayer(object):
 			sub_sample['nodes']['open'].update(\
 				nodes.difference(sub_sample['nodes']['close'])\
 				.difference(self._sample['nodes']['close']))
-		except KeyError:
-			print('		Err:')
+		except KeyError as e:
+			print('		subsample update:', e)
 
 
 		return sub_sample
@@ -237,6 +237,8 @@ class UndirectedSingleLayer(object):
 
 		sub_sample = {'edges': set(), 'nodes': {'close': set(), 'open': set()}}
 		sub_sample['nodes']['open'].add(current_node)
+
+
 		private_count = 0
 
 		while self._cost < self._budget and len(sub_sample['nodes']['open']) > 0:
@@ -257,8 +259,9 @@ class UndirectedSingleLayer(object):
 			else:
 				private_count += 1
 
-			# Update the sub sample
-			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
+			if current_node in sub_sample['nodes']['open']:
+				# Update the sub sample
+				sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
 
 			# Candidate nodes are the (open) neighbors of current node
 			candidates = list(set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
@@ -269,6 +272,12 @@ class UndirectedSingleLayer(object):
 					current_node = random.choice(list(nodes))
 				else:
 					current_node = random.choice(list(self._sample_graph.nodes()))
+
+				r = random.uniform(0,1)
+				if r < 0.15:
+					current_node = random.choice(list(self._sample_graph.nodes()))
+					print(' JUMP!', self._cost)
+
 				print('	 Walking .. current node', current_node)
 				# Query the neighbors of current
 				nodes, edges, c = self._query.neighbors(current_node)
@@ -288,114 +297,6 @@ class UndirectedSingleLayer(object):
 		new_nodes = set(nodes).difference(current_nodes)
 		c = len(new_nodes)
 		self._track_new_nodes.append(current)
-
-
-
-	def _random_walk_max(self):
-		current_node = random.choice(list(self._sample['nodes']['open']))
-
-		sub_sample = {'edges': set(), 'nodes': {'close': set(), 'open': set()}}
-		sub_sample['nodes']['open'].add(current_node)
-
-		while self._cost < self._budget and len(sub_sample['nodes']['open']) > 0:
-			# Query the neighbors of current
-			nodes, edges, c = self._query.neighbors(current_node)
-			# Update the sub sample
-			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
-
-			# Add edges to sub_graph
-			for e in edges:
-				self._sample_graph.add_edge(e[0], e[1])
-			# Update the cost
-			self._increment_cost(c)
-
-			# Candidate nodes are the (open) neighbors of current node
-			candidates = list(
-				set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
-
-			while len(candidates) == 0:
-				current_node = self._choose_next_node(list(nodes))
-				# Query the neighbors of current
-				nodes, edges, c = self._query.neighbors(current_node)
-				# Candidate nodes are the (open) neighbors of current node
-				candidates = list(
-					set(nodes).difference(sub_sample['nodes']['close']).difference(self._sample['nodes']['close']))
-				print("RW: getting stuck")
-
-			#current_node = random.choice(candidates)
-			current_node = self._choose_next_node(candidates)
-
-
-		# Update the sample with the sub sample
-		self._updateSample(sub_sample)
-
-	def _choose_next_node(self, candidates):
-		avg_cc = nx.average_clustering(self._sample_graph)
-		deg_cand = self._sample_graph.degree(candidates)
-
-		P_max = avg_cc
-		rand = random.uniform(0,1)
-
-		if rand <= P_max:
-			selected_node = self._pick_max_score(deg_cand)
-		else:
-			selected_node = random.choice(candidates)
-
-		return selected_node
-
-	def _test(self):
-		candidates = self._sample['nodes']['open']
-		degree_observed = self._sample_graph.degree(candidates)
-		degree_observed_sorted = _mylib.sortDictByValues(degree_observed, reverse=True)
-		current_node = degree_observed_sorted[0][0]
-
-		sub_sample = {'edges': set(), 'nodes': {'close': set(), 'open': set()}}
-		sub_sample['nodes']['open'].add(current_node)
-		sub_sample['nodes']['open'].update(self._sample['nodes']['open'])
-
-		P_MOD = 0.5
-
-		while self._cost < self._budget and len(sub_sample['nodes']['open']) > 0:
-
-			close_n = sub_sample['nodes']['close']
-
-			# Query the neighbors of current
-			nodes, edges, c = self._query.neighbors(current_node)
-
-			#cc_node = nx.clustering(self._sample_graph, current_node)
-			average_cc = nx.average_clustering(self._sample_graph)
-			try:
-				average_cc_close = nx.average_clustering(self._sample_graph.subgraph(close_n))
-			except ZeroDivisionError:
-				average_cc_close = 0.
-
-			# Update the sub sample
-			sub_sample = self._updateSubSample(sub_sample, nodes, edges, current_node)
-
-			# Add edges to sub_graph
-			for e in edges:
-				self._sample_graph.add_edge(e[0], e[1])
-			# Update the cost
-
-			self._increment_cost(c)
-
-			candidates = list(
-				set(self._sample_graph.nodes()).difference(sub_sample['nodes']['close']).difference(
-					self._sample['nodes']['close']))
-
-			r = random.uniform(0,1)
-
-			if r < P_MOD:
-				current_node = random.choice(candidates)
-			else:
-				degree_observed = self._sample_graph.degree(candidates)
-				degree_observed_sorted = _mylib.sortDictByValues(degree_observed, reverse=True)
-				current_node = degree_observed_sorted[0][0]
-
-			print(' [test] current cc: {} {}'.format(average_cc, average_cc_close))
-
-		# Update the sample with the sub sample
-		self._updateSample(sub_sample)
 
 	def _max_obs_deg(self):
 		current_node = starting_node
@@ -933,8 +834,8 @@ if __name__ == '__main__':
 	parser.add_argument('-dataset', help='Name of the dataset', default=None)
 	parser.add_argument('-log', help='Log file', default='./log/')
 	parser.add_argument('-experiment', help='# of experiment', default=10)
-	parser.add_argument('-log_interval', help='# of budget interval for lไogging', type=int, default=10)
-	parser.add_argument('-mode', help='mode', type=int, default=1)
+	parser.add_argument('-log_interval', help='# of budget interval for logging', type=int, default=10)
+	parser.add_argument('-mode', help='mode', type=int, default=2)
 	parser.add_argument('-delimiter', help='csv delimiter', type=str, default=None)
 	parser.add_argument('-n', help='n', type=str, default=20)
 
@@ -1071,9 +972,9 @@ if __name__ == '__main__':
 				print('Target', b)
 
 				#sample_fn = './output/private-exp-'+ int(fold_n) + '/sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(time.time()) + '.pickle'
-				#folder_n = './output-rw/budget-exp-private-20/budget-'+str(budget)
-				#folder_n = './output-rw/loc-private-20'
-				folder_n = './output-rw/private-exp-budget-1000/private-' + str(fold_n)
+				folder_n = './outputRW/budget-exp-private-20/budget-'+str(budget)
+				#folder_n = './outputRW/loc-private-20'
+				#folder_n = './outputRW/private-exp-budget-1000/private-' + str(fold_n)
 				sample_fn = folder_n + '/' + str(i) + '_sample_' + type + '_' + str(budget) + '_' + str(len(c_nodes)) + '_' + str(len(target_nbs)) + '_' + str(target_gender) + '.pickle'
 
 				#sample_fn = './output/test'+ str(i) +'.pickle'
