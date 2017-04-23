@@ -11,12 +11,12 @@ sys.path.insert(0, '../sampling')
 from extract_features import ExtractFeatures
 
 
-f = open("./output/output_"+sys.argv[1]+"_"+sys.argv[2].replace("/", "_")+".csv","w")
+f = open("./" + sys.argv[5] +"/output_"+sys.argv[1]+"_"+sys.argv[2].replace("/", "_")+".csv","w")
 
-for loop in range(int(sys.argv[3])):
-    f.write("FILENAME, RAND, RAND.Pred, RAND.Act, RAND.All, BASIC, BASIC.Pred, BASIC.Act, BASIC.All, AGG, AGG.Pred, AGG.Act, AGG.All, BLOCK, BLOCK.Pred, BLOCK.Act, BLOCK.All, SVM, SVM.Pred, SVM.Act, SVM.All, SVM Auc, NN, NN.Pred, NN.Act, NN.All, Folder, Category, Trial\n")
+for loop in range(int(sys.argv[4])):
+    # f.write("FILENAME, RAND, RAND.Pred, RAND.Act, RAND.All, BASIC, BASIC.Pred, BASIC.Act, BASIC.All, AGG, AGG.Pred, AGG.Act, AGG.All, BLOCK, BLOCK.Pred, BLOCK.Act, BLOCK.All, SVM, SVM.Pred, SVM.Act, SVM.All, SVM.Auc, NN, NN.Pred, NN.Act, NN.All, Folder, Category, Trial\n")
 
-    for fileName in glob.glob("../sampling/output2/"+sys.argv[2]+"/*"):
+    for fileName in glob.glob("../sampling/" + sys.argv[5] +"/"+sys.argv[2]+"/*"):
         print "Processing:      {0}".format(os.path.basename(fileName))
         f.write(os.path.basename(fileName))
 
@@ -57,8 +57,8 @@ for loop in range(int(sys.argv[3])):
                 checkPredict = predictGender == np.argmax(userLabel[i])
                 accuracy.append(checkPredict)
                 if i == onlyTarget:
-                    print "{0:13}".format((checkPredict, predictGender, np.argmax(userLabel[i]))),
-                    f.write("," + str(checkPredict) + "," + str(predictGender) + "," + str(np.argmax(userLabel[i])))
+                    print "{0:13}".format((int(checkPredict), predictGender, np.argmax(userLabel[i]))),
+                    f.write("," + str(int(checkPredict)) + "," + str(predictGender) + "," + str(np.argmax(userLabel[i])))
         print " {0}".format((accuracy.count(True) / float(len(accuracy))))
         f.write("," + str(accuracy.count(True) / float(len(accuracy))))
 
@@ -67,19 +67,15 @@ for loop in range(int(sys.argv[3])):
         if loop == 0:
             print "BASIC: ",
             accuracy = []
+            publicProfile = np.where(userStatus == 1)
+            countLabel = np.sum(userLabel[publicProfile],axis=0)
             for target in range(0,len(userStatus)):
                 if userStatus[target] == 0:
-                    countLabel = np.array([0 for i in range(numLabel)])
-                    countPublic = 0
-                    for idx, val in enumerate(userLabel):
-                        if idx != target and userStatus[idx] != 0:
-                            countLabel[np.argmax(val)] += 1
-                            countPublic += 1
                     checkPredict = np.argmax(countLabel) == np.argmax(userLabel[target])
                     accuracy.append(checkPredict)
                     if target == onlyTarget:
-                        print "{0:13}".format((checkPredict, np.argmax(countLabel), np.argmax(userLabel[target]))),
-                        f.write("," + str(checkPredict) + "," + str(np.argmax(countLabel)) + "," + str(np.argmax(userLabel[target])))
+                        print "{0:13}".format((int(checkPredict), np.argmax(countLabel), np.argmax(userLabel[target]))),
+                        f.write("," + str(int(checkPredict)) + "," + str(np.argmax(countLabel)) + "," + str(np.argmax(userLabel[target])))
             print " {0}".format((accuracy.count(True) / float(len(accuracy))))
             f.write("," + str(accuracy.count(True)/float(len(accuracy))))
         else:
@@ -90,21 +86,15 @@ for loop in range(int(sys.argv[3])):
         if loop == 0:
             print "AGG:   ",
             accuracy = []
+            publicProfile = np.where(userStatus == 1)
             for target in range(0,len(userStatus)):
                 if userStatus[target] == 0:
-                    countLabel = np.array([0 for i in range(numLabel)])
-                    countPublic = 0
-                    for idx, val in enumerate(userLabel):
-                        if idx != target and userStatus[idx] != 0 and userLink[idx,target] == 1:
-                            countLabel[np.argmax(val)] += 1
-                            countPublic += 1
-                    labelPredict = np.array([0 for i in range(numLabel)])
-                    labelPredict[np.argmax(countLabel)] = 1
+                    countLabel = np.sum(userLabel[np.intersect1d(np.where(userLink[target] == 1), publicProfile)],axis=0)
                     checkPredict = np.argmax(countLabel) == np.argmax(userLabel[target])
                     accuracy.append(checkPredict)
                     if target == onlyTarget:
-                        print "{0:13}".format((checkPredict, np.argmax(countLabel), np.argmax(userLabel[target]))),
-                        f.write("," + str(checkPredict) + "," + str(np.argmax(countLabel)) + "," + str(np.argmax(userLabel[target])))
+                        print "{0:13}".format((int(checkPredict), np.argmax(countLabel), np.argmax(userLabel[target]))),
+                        f.write("," + str(int(checkPredict)) + "," + str(np.argmax(countLabel)) + "," + str(np.argmax(userLabel[target])))
             print " {0}".format((accuracy.count(True) / float(len(accuracy))))
             f.write("," + str(accuracy.count(True) / float(len(accuracy))))
         else:
@@ -115,26 +105,26 @@ for loop in range(int(sys.argv[3])):
         if loop == 0:
             print "BLOCK: ",
             linkCount = [[0 for i in range(numLabel)] for i in range(numLabel)]
-            for idx in range(len(userLink)):
-                for idy in range(len(userLink)):
-                    if userLink[idx][idy] == 1:
-                        linkCount[np.argmax(userLabel[idx])][np.argmax(userLabel[idy])] += 1
+            userLinkIndex = np.where(userLink == 1)
+            for i in range(len(userLinkIndex[0])):
+                source = userLinkIndex[0][i]
+                des = userLinkIndex[1][i]
+                if userStatus[source] == 1 and userStatus[des] == 1:
+                    linkCount[np.argmax(userLabel[source])][np.argmax(userLabel[des])] += 1
             linkCount = np.array(linkCount).astype(float)/np.sum(linkCount)
             accuracy = []
+            publicProfile = np.where(userStatus == 1)
             for i in range(0,len(userStatus)):
-                userCount = np.array([0 for k in range(numLabel)])
                 if userStatus[i] == 0:
-                    for j in range(len(userLink)):
-                        if userLink[i][j] == 1 and userStatus[j] == 1:
-                            userCount[np.argmax(userLabel[j])] += 1
+                    userCount = np.sum(userLabel[np.intersect1d(np.where(userLink[i] == 1), publicProfile)],axis=0)
                     if np.sum(userCount) != 0:
                         userCount = np.array(userCount).astype(float) / np.sum(userCount)
                         dis = [np.linalg.norm(linkCount[k]-userCount) for k in range(linkCount.shape[0])]
                         checkPredict = np.argmax(dis) == np.argmax(userLabel[i])
                         accuracy.append(checkPredict)
                     if i == onlyTarget:
-                        print "{0:13}".format((checkPredict, np.argmax(dis), np.argmax(userLabel[i]))),
-                        f.write("," + str(checkPredict) + "," + str(np.argmax(dis)) + "," + str(np.argmax(userLabel[i])))
+                        print "{0:13}".format((int(checkPredict), np.argmax(dis), np.argmax(userLabel[i]))),
+                        f.write("," + str(int(checkPredict)) + "," + str(np.argmax(dis)) + "," + str(np.argmax(userLabel[i])))
             print " {0}".format((accuracy.count(True) / float(len(accuracy))))
             f.write("," + str(accuracy.count(True) / float(len(accuracy))))
         else:
@@ -164,8 +154,8 @@ for loop in range(int(sys.argv[3])):
         yScore = clf.fit(xReSampled, yReSampled).decision_function(testX)
         predict = clf.predict(testX)
         accuracy = list(predict == np.array(testY))
-        print "{0:13}".format((predict[newTarget] == testY[newTarget], predict[newTarget], testY[newTarget])),
-        f.write("," + str (predict[newTarget] == testY[newTarget]) + "," + str(predict[newTarget]) + "," + str(testY[newTarget]))
+        print "{0:13}".format((int(predict[newTarget] == testY[newTarget]), predict[newTarget], testY[newTarget])),
+        f.write("," + str(int(predict[newTarget] == testY[newTarget])) + "," + str(predict[newTarget]) + "," + str(testY[newTarget]))
         print " {0:13}".format((accuracy.count(True) / float(len(accuracy)))),
         f.write("," + str (accuracy.count(True) / float(len(accuracy))))
         print " {0}".format(roc_auc_score(testY, yScore))
@@ -177,15 +167,16 @@ for loop in range(int(sys.argv[3])):
         clf.fit(xReSampled, yReSampled)
         predict = clf.predict(testX)
         accuracy = list(predict == np.array(testY))
-        print "{0:13}".format((predict[newTarget] == testY[newTarget], predict[newTarget], testY[newTarget])),
-        f.write("," + str (predict[newTarget] == testY[newTarget]) + "," + str(predict[newTarget]) + "," + str(testY[newTarget]))
+        print "{0:13}".format((int(predict[newTarget] == testY[newTarget]), predict[newTarget], testY[newTarget])),
+        f.write("," + str(int(predict[newTarget] == testY[newTarget])) + "," + str(predict[newTarget]) + "," + str(testY[newTarget]))
         print " {0}".format((accuracy.count(True) / float(len(accuracy))))
         f.write("," + str(accuracy.count(True) / float(len(accuracy))))
 
         # New line
+        f.write("," + sys.argv[6] + "," + sys.argv[3] + "," + str(loop))
         f.write("\n")
         print "\n"
 
-    f.write(",\n")
-    f.write(",\n")
+    # f.write(",\n")
+    # f.write(",\n")
 f.close()
